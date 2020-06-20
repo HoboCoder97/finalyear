@@ -50,7 +50,8 @@ else {
 if ($error == 0){
     //Register User
     include ("../../includes/con.php");
-    $password = password_hash($password, PASSWORD_DEFAULT);
+    $password = trim(password_hash($_POST["pwd"], PASSWORD_DEFAULT));
+
     $sql = "INSERT INTO users (username, password, name , experience, email)
 VALUES ('$username', '$password', '$name', $experience, '$email')";
 

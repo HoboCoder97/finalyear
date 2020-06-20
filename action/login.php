@@ -35,15 +35,15 @@ if (isset($_POST["username"])){
                               $_SESSION["username"] = $username;
                               echo ("<script LANGUAGE='JavaScript'>
     window.alert('Succesfully Logged In');
-    window.location.href='../../index.php';
+    window.location.href='../main/index.php';
     </script>");
 
-                              // Redirect user to welcome page
-                              header("location: welcome.php");
                           } else{
                               // Display an error message if password is not valid
-                              $output = password_hash($pwd, PASSWORD_DEFAULT);
-                echo "entered hash : ". $output . "\n Database Hash " . $hashed_password;
+                              echo ("<script LANGUAGE='JavaScript'>
+    window.alert('Wrong password');
+    window.location.href='../index.php';
+    </script>");
                           }
                       }
                   } else{
