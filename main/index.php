@@ -1,4 +1,5 @@
 <?php
+session_start();
 ?>
 <!--
 
@@ -76,7 +77,7 @@
                 <li>
                     <a href="./pages/models/index.php">
                         <i class="now-ui-icons design_bullet-list-67"></i>
-                        <p>Trained Models</p>
+                        <p>NASDAQ Codes</p>
                     </a>
                 </li>
                 <li class="active-pro">
@@ -169,16 +170,20 @@
                                     <i class="now-ui-icons loader_gear"></i>
                                 </button>
                                 <div class="dropdown-menu dropdown-menu-right">
-                                    <a class="dropdown-item" href="#">Action</a>
-                                    <a class="dropdown-item" href="#">Another action</a>
-                                    <a class="dropdown-item" href="#">Something else here</a>
-                                    <a class="dropdown-item text-danger" href="#">Remove Data</a>
+                                    <a class="dropdown-item" href="./actions/tick.php?q=1">Open</a>
+                                    <a class="dropdown-item" href="./actions/tick.php?q=2">High</a>
+                                    <a class="dropdown-item" href="./actions/tick.php?q=3">Low</a>
+                                    <a class="dropdown-item" href="./actions/tick.php?q=4">Close</a>
+                                    <a class="dropdown-item" href="./actions/tick.php?q=5">Volume</a>
                                 </div>
                             </div>
                         </div>
                         <div class="card-body">
                             <div class="chart-area">
-                                <input id="txtHint" type="text" placeholder="Enter Stock Code" onkeydown="showCustomer(this.value)">
+                                <form method="post" action="actions/code.php">
+                                <input id="txtHint" name="code" type="text" placeholder="Enter Stock Code" >
+                                <button type="submit">Update</button>
+                                </form>
                                 <script>
                                     function showCustomer(str) {
 
@@ -208,17 +213,29 @@
                                 require("../vendor/autoload.php");
                                 use AlphaVantage\Client;
 
+                                    if (isset($_SESSION['code'])){
+                                                $symbol = $_SESSION['code'];
+                                    }
+                                    else {
+                                                $symbol = 'IBM';
+                                    }
                                 $alpha_vantage = new Client('07CVP2GNLNU5KZ5Y');
                                 $data = $alpha_vantage
                                     ->stock()
-                                    ->intraday('GOOGL', AlphaVantage\Resources\Stock::INTERVAL_1MIN);
-                                echo '<pre>'; print_r($data); echo '</pre>';
+                                    ->intraday($symbol, AlphaVantage\Resources\Stock::INTERVAL_1MIN);
+                             // echo '<pre>'; print_r($data); echo '</pre>';
 
-                                $dataPoints = array();
-                                $y = 40;
-                                for($i = 0; $i < 1000; $i++){
-                                    $y += rand(0, 10) - 5;
-                                    array_push($dataPoints, array("x" => $i, "y" => $y));
+                               $dataPoints = array();
+                               $minimum = 999999999999999;
+                               $maximum = 0;
+                                foreach ($data['Time Series (1min)'] as $time => $tick) {
+                                    array_push($dataPoints, array("x" => strtotime($time), "label" => $time, "y" => (float) $tick['4. close']));
+                                    if ($tick['4. close'] < $minimum){
+                                        $minimum = $tick['4. close'];
+                                    }
+                                    if ($tick['4. close'] > $maximum){
+                                        $maximum = $tick['4. close'];
+                                    }
                                 }
 
                                 ?>
@@ -227,14 +244,19 @@
                                         window.onload = function () {
 
                                             var chart = new CanvasJS.Chart("chartContainer", {
-                                                theme: "light2", // "light1", "light2", "dark1", "dark2"
+                                                theme: "dark2", // "light1", "light2", "dark1", "dark2"
                                                 animationEnabled: true,
                                                 zoomEnabled: true,
+                                                beginAtZero: false,
+                                                axisY:{
+                                                    minimum: <?php echo $minimum-1;?>,
+                                                    maximum: <?php echo $maximum+1; ?>,
+                                                },
                                                 title: {
-                                                    text: "Try Zooming and Panning"
+                                                    text: "Data of <?php echo $symbol;?>"
                                                 },
                                                 data: [{
-                                                    type: "area",
+                                                    type: "line",
                                                     dataPoints: <?php echo json_encode($dataPoints, JSON_NUMERIC_CHECK); ?>
                                                 }]
                                             });
@@ -242,8 +264,8 @@
 
                                         }
                                     </script>
-
-                                <div id="chartContainer" style="height: 370px; width: 100%;"></div>
+<br/>
+                                <div id="chartContainer" style="height: 600px; width: 100%;"></div>
                                 <script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
 
                                 <?php
